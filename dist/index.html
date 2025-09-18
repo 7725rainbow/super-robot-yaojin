@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>尧金onlie</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+
+
+    <style>
+      :root {
+        /* Palette: Lilac & Moonlight */
+        /* 导航栏背景色 */
+        --nav-background-color: #6b69e2;
+        /* 尧金聊天气泡颜色 */
+        --yaojin-bubble-color: #4e4096;
+        /* 用户聊天气泡颜色 */
+        --user-bubble-color: #ffffff;
+        /* 聊天区域背景色 */
+        --chat-background-color: #dcacfd;
+        /* 底部输入框颜色 */
+        --input-box-color: #b0affb;
+
+        /* 文字颜色，用于确保可读性 */
+        --text-on-dark: #ffffff;
+        --text-on-light: #000000;
+        
+        /* 点缀色 */
+        --accent-color: #FFFFFF;
+      }
+      
+      html {
+        box-sizing: border-box;
+      }
+      
+      *, *:before, *:after {
+        box-sizing: inherit;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Noto Sans SC', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: var(--chat-background-color);
+        color: var(--text-on-light);
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #eedcfa; /* Lighter lilac for track */
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #c5a3e0; /* Medium lilac */
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--input-box-color);
+      }
+      
+      /* Animation */
+      @keyframes fade-in-up {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-in-up {
+        animation: fade-in-up 0.5s ease-out forwards;
+      }
+      
+      @keyframes bounce {
+        0%, 100% {
+          transform: translateY(-25%);
+          animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+        }
+        50% {
+          transform: translateY(0);
+          animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+        }
+      }
+      .animate-bounce {
+        animation: bounce 1s infinite;
+      }
+
+      /* New styles for bubble glow */
+      @keyframes shimmer-glow {
+        0% {
+          box-shadow: 0 0 4px rgba(236, 224, 255, 0.2), inset 0 0 5px rgba(255,255,255,0.05);
+        }
+        50% {
+          box-shadow: 0 0 10px rgba(236, 224, 255, 0.5), inset 0 0 10px rgba(255,255,255,0.1);
+        }
+        100% {
+          box-shadow: 0 0 4px rgba(236, 224, 255, 0.2), inset 0 0 5px rgba(255,255,255,0.05);
+        }
+      }
+      .animate-shimmer-glow {
+          animation: shimmer-glow 3s ease-in-out infinite;
+      }
+
+    </style>
+<link rel="stylesheet" href="/index.css">
+    <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.19.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "path": "https://aistudiocdn.com/path@^0.12.7",
+    "vite": "https://aistudiocdn.com/vite@^7.1.5",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.2"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/assets/index-CKL0fMAP.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CNxNxCTj.css">
+</head>
+<body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+</body>
+</html>

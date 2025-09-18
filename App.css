@@ -1,0 +1,42 @@
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.initial-message-animation {
+  animation-name: fade-in-up;
+  animation-duration: 0.6s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+
+.guide-prompts-animation > * {
+  animation-name: fade-in-up;
+  animation-duration: 0.5s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+  opacity: 0;
+}
+
+.guide-prompts-animation > *:nth-child(1) {
+  animation-delay: 0.3s;
+}
+
+.guide-prompts-animation > *:nth-child(2) {
+  animation-delay: 0.45s;
+}
+
+.guide-prompts-animation > *:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+.guide-prompts-animation > *:nth-child(4) {
+  animation-delay: 0.75s;
+}
