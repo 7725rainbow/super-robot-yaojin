@@ -1,31 +1,31 @@
-// frontend/api/douban-movie.ts
+// frontend/api/doubanmovie.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// [最终方案] 调用你自己部署在 Vercel 上的、稳定可靠的API服务
-const MY_API_BASE_URL = "https://dailyhot-puce.vercel.app"; // 已更新为您自己的API地址
+// [最终方案] 调用你自己部署的、稳定可靠的API服务
+const MY_API_URL = "https://dailyhot-puce.vercel.app/douban-movie";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const response = await fetch(`${MY_API_BASE_URL}/douban-movie`); // 路径是 /douban-movie
+    // 任务非常简单：直接请求自己的API
+    const response = await fetch(MY_API_URL);
 
-    if (!response.ok) throw new Error(`请求自部署API失败: ${response.status}`);
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`请求自部署API(/douban-movie)失败: ${response.status}`, errorText);
+        return res.status(response.status).send(errorText);
+    }
 
     const data = await response.json();
 
-    if (!data || !Array.isArray(data.data)) throw new Error('自部署API返回数据结构异常');
-
-    const finalMovies = data.data.slice(0, 5).map((item: any) => ({
-      title: item.title,
-      rating: item.rating,
-      url: item.url,
-    }));
+    // 我们只把API返回的核心 data 字段透传给前端
+    const finalData = data.data || [];
     
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=600');
-    res.status(200).json(finalMovies);
+    res.status(200).json(finalData);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '未知错误';
-    console.error(`后端服务出错: ${errorMessage}`);
+    console.error(`后端服务(/douban-movie)出错: ${errorMessage}`);
     res.status(500).json({ error: `后端服务出错: ${errorMessage}` });
   }
 }
