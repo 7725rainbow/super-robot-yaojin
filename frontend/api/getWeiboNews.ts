@@ -1,13 +1,14 @@
 // frontend/api/getWeiboNews.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// 从 Vercel 的环境变量中读取新的 API 地址
+// Read the new API address from Vercel's environment variables
 const WEIBO_HOT_TREND_API = process.env.WEIBO_HOT_TREND_API;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Check if the environment variable is set
   if (!WEIBO_HOT_TREND_API) {
-    console.error('WEIBO_HOT_TREND_API 环境变量未设置！请在 Vercel 后台进行配置。');
-    return res.status(500).json({ error: '后端服务配置错误：微博 API 地址未找到。' });
+    console.error('WEIBO_HOT_TREND_API environment variable is not set! Please configure it in your Vercel dashboard.');
+    return res.status(500).json({ error: 'Backend service configuration error: Weibo API address not found.' });
   }
 
   try {
@@ -19,34 +20,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`从第三方微博热搜API抓取数据失败: ${response.status} - ${errorText}`);
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch data from the third-party Weibo API: ${response.status} - ${errorText}`);
     }
     
     const data = await response.json();
 
-    // 1. **更新数据结构检查**
-    // 新的 API 返回结构为 { "Data": { "data": [...] } }
-    if (!data || !data.Data || !Array.isArray(data.Data.data)) {
-        console.error('新API返回数据结构异常:', data);
-        throw new Error('新API返回数据结构异常或请求失败');
+    // 1. **Update Data Structure Check**
+    // The new API returns a simple array, so we check if 'data' is an array.
+    if (!Array.isArray(data)) {
+      console.error('New API returned an invalid data structure:', data);
+      throw new Error('New API returned an invalid data structure or the request failed.');
     }
 
-    const allTrends = data.Data.data;
+    const allTrends = data;
 
-    // 2. **更新数据字段映射**
-    // 新 API 使用 Title 和 Url，而非 title 和 url
+    // 2. **Update Data Field Mapping**
+    // The new API uses 'hot_word' and 'hot_word_url'.
     const finalTrends = allTrends
       .slice(0, 5)
       .map((item: any) => ({
-        title: item.Title || '未知热点', // 字段名更新为 Title
-        url: item.Url || '#'           // 字段名更新为 Url
+        title: item.hot_word || 'Unknown Hot Trend', // Field name is now hot_word
+        url: item.hot_word_url || '#'              // Field name is now hot_word_url
       }));
     
     res.status(200).json(finalTrends);
 
   } catch (error) {
-    console.error(`后端服务出错: ${error instanceof Error ? error.message : String(error)}`);
-    res.status(500).json({ error: `后端服务出错: ${error instanceof Error ? error.message : '未知错误'}` });
+    console.error(`Backend service error: ${error instanceof Error ? error.message : String(error)}`);
+    res.status(500).json({ error: `Backend service error: ${error instanceof Error ? error.message : 'Unknown error'}` });
   }
 }
