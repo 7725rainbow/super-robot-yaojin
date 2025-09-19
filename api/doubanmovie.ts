@@ -1,18 +1,24 @@
 // frontend/api/douban-movie.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// [最终方案] 调用你自己部署在 Vercel 上的、稳定可靠的API服务
-const MY_API_BASE_URL = "https://dailyhot-puce.vercel.app"; // 已更新为您自己的API地址
+// [最终方案] 回到最初的 imsyy.top 服务
+const API_URL = "https://hot.imsyy.top/douban-movie";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const response = await fetch(`${MY_API_BASE_URL}/douban-movie`); // 路径是 /douban-movie
+    const response = await fetch(API_URL, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+        }
+    });
 
-    if (!response.ok) throw new Error(`请求自部署API失败: ${response.status}`);
+    if (!response.ok) throw new Error(`请求API失败: ${response.status}`);
 
     const data = await response.json();
 
-    if (!data || !Array.isArray(data.data)) throw new Error('自部署API返回数据结构异常');
+    if (data.code !== 200 || !Array.isArray(data.data)) {
+        throw new Error('API返回数据结构异常');
+    }
 
     const finalMovies = data.data.slice(0, 5).map((item: any) => ({
       title: item.title,
