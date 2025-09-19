@@ -1,36 +1,44 @@
 // frontend/api/maoyan-movie.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 
-// [最终方案] 直接请求稳定、公开的 viki.moe 猫眼API
-const API_URL = "https://60s.viki.moe/v2/maoyan"; 
+// 猫眼电影 TOP100 榜单页面
+const MAOYAN_TOP100_URL = "https://www.maoyan.com/board/4";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const response = await fetch(API_URL, {
+    const response = await axios.get(MAOYAN_TOP100_URL, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
       }
     });
-
-    if (!response.ok) {
-        throw new Error(`请求猫眼API(viki.moe)失败: ${response.status}`);
-    }
     
-    const data = await response.json();
+    const html = response.data;
+    const $ = cheerio.load(html);
 
-    if (data.code !== 200 || !Array.isArray(data.data)) {
-      throw new Error('猫眼API(viki.moe)返回数据结构异常');
-    }
-
-    // 适配viki.moe的数据结构，返回前端需要的格式
-    const finalMovies = data.data.slice(0, 5).map((item: any) => ({
-      title: item.title,
-      rating: item.rating || '暂无评分', // viki.moe直接提供了rating字段
-      url: item.url,
-    }));
+    const movies: any[] = [];
     
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=600');
-    res.status(200).json(finalMovies);
+    // 使用 Cheerio 抓取榜单信息
+    $('dl.board-wrapper dd').each((index, element) => {
+      const title = $(element).find('.name a').text().trim();
+      const actors = $(element).find('.star').text().trim();
+      const releaseTime = $(element).find('.releasetime').text().trim();
+      const movieUrl = 'https://www.maoyan.com' + $(element).find('.name a').attr('href');
+      
+      // 猫眼榜单不直接显示评分，我们用上映时间或主演信息作为替代
+      movies.push({
+        title: title,
+        rating: releaseTime || actors, 
+        url: movieUrl,
+      });
+    });
+
+    // 只返回前5条结果
+    const top5Movies = movies.slice(0, 5);
+    
+    res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=3600'); // 缓存一天
+    res.status(200).json(top5Movies);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '未知错误';
