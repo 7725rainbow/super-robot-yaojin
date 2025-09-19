@@ -1,8 +1,8 @@
 // frontend/api/getWeiboNews.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// [最终方案] 调用你自己部署的、稳定可靠的API服务
-const MY_API_BASE_URL = "https://hot-daily-eta.vercel.app"; // 已更新为您自己的API地址
+// [最终方案] 调用你自己部署在 Vercel 上的、稳定可靠的API服务
+const MY_API_BASE_URL = "https://dailyhot-puce.vercel.app"; // 已更新为您自己的API地址
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -12,7 +12,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     const data = await response.json();
 
-    // 根据自部署API的格式进行解析
     if (!data || !Array.isArray(data.data)) throw new Error('自部署API返回数据结构异常');
 
     const finalTrends = data.data.slice(0, 10).map((item: any) => ({
