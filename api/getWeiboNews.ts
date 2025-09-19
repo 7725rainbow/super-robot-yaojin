@@ -1,3 +1,5 @@
+// 文件路径: DailyHotApi/src/routes/weibo.ts
+
 import { Router } from "express";
 import { get } from "axios"; // 确保 axios 被导入
 
@@ -20,10 +22,11 @@ const getWeibo = async () => {
     if (response.data.code !== 200 || !Array.isArray(response.data.data)) {
       throw new Error("viki.moe API returned an unexpected structure.");
     }
-    
+
     const allTrends = response.data.data;
 
     // [新] 适配新API的数据字段 (title, url)
+    // 注意：imsyy的原始格式是title,hot,url，我们这里保持一致
     const result = allTrends.map((v: any) => {
       return {
         title: v.title,
@@ -31,9 +34,9 @@ const getWeibo = async () => {
         url: v.url,
       };
     });
-    
+
     return {
-      from: "viki.moe",
+      from: "viki.moe", // 标注数据来源
       data: result,
     };
 
