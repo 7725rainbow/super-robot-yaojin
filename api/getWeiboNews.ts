@@ -1,37 +1,55 @@
-// frontend/api/getWeiboNews.ts
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Router } from "express";
+import { get } from "axios"; // 确保 axios 被导入
 
-// [最终方案] 回到最初的 imsyy.top 服务
-const API_URL = "https://hot.imsyy.top/weibo";
+const router = Router();
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+// [新] 定义新的、更稳定的API地址
+const NEW_WEIBO_API_URL = "https://60s.viki.moe/v2/weibo";
+
+const getWeibo = async () => {
   try {
-    const response = await fetch(API_URL, {
-        headers: {
-            // 加上 User-Agent 以防万一
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-        }
+    // [新] 请求新的API地址
+    const response = await get(NEW_WEIBO_API_URL, {
+      headers: {
+        // [保留] 加上User-Agent是个好习惯
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+      },
     });
 
-    if (!response.ok) throw new Error(`请求API失败: ${response.status}`);
-    
-    const data = await response.json();
-
-    if (data.code !== 200 || !Array.isArray(data.data)) {
-        throw new Error('API返回数据结构异常');
+    // [新] 根据新API的返回格式进行检查
+    if (response.data.code !== 200 || !Array.isArray(response.data.data)) {
+      throw new Error("viki.moe API returned an unexpected structure.");
     }
-
-    const finalTrends = data.data.slice(0, 10).map((item: any) => ({
-        title: item.title,
-        url: item.url,
-    }));
     
-    res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=300');
-    res.status(200).json(finalTrends);
+    const allTrends = response.data.data;
+
+    // [新] 适配新API的数据字段 (title, url)
+    const result = allTrends.map((v: any) => {
+      return {
+        title: v.title,
+        hot: v.hot,
+        url: v.url,
+      };
+    });
+    
+    return {
+      from: "viki.moe",
+      data: result,
+    };
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '未知错误';
-    console.error(`后端服务出错: ${errorMessage}`);
-    res.status(500).json({ error: `后端服务出错: ${errorMessage}` });
+    console.error("Error fetching from viki.moe Weibo API:", error);
+    // 在出错时返回一个标准的空数据结构，避免服务崩溃
+    return {
+      from: "error",
+      data: [],
+    };
   }
-}
+};
+
+router.get("/", async (req, res) => {
+  const data = await getWeibo();
+  res.send(data);
+});
+
+export default router;
