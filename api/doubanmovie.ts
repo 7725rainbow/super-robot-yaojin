@@ -1,57 +1,50 @@
 // frontend/api/douban-movie.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-// [新] 导入我们刚刚安装的 cheerio 库
-import * as cheerio from 'cheerio';
 
-// [新] 豆瓣“正在热映”的北京地区网页地址
-const DOUBAN_NOWPLAYING_URL = "https://movie.douban.com/cinema/nowplaying/beijing/";
+// 使用 TenAPI 的豆瓣服务
+const DOUBAN_API = "https://tenapi.cn/v2/doubanresou";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    // 像浏览器一样请求网页HTML
-    const response = await fetch(DOUBAN_NOWPLAYING_URL, {
+    // 使用 TenAPI，并带上 User-Agent 请求头
+    const response = await fetch(DOUBAN_API, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
       }
     });
 
     if (!response.ok) {
-      throw new Error(`请求豆瓣网页失败: ${response.status}`);
+      throw new Error(`请求 TenAPI 豆瓣接口失败: ${response.status}`);
+    }
+
+    // 增加对返回内容类型的检查
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const responseText = await response.text();
+      console.error('TenAPI 豆瓣接口未返回JSON，实际内容:', responseText);
+      throw new Error(`TenAPI 豆瓣接口响应格式错误，期望JSON但收到了非JSON内容。`);
     }
     
-    // 获取网页的HTML文本内容
-    const html = await response.text();
+    const data = await response.json();
+
+    if (data.code !== 200 || !Array.isArray(data.data)) {
+      console.error('TenAPI 豆瓣接口返回数据结构异常:', data);
+      throw new Error('TenAPI 豆瓣接口返回数据结构异常');
+    }
+
+    const allMovies = data.data;
+
+    const finalMovies = allMovies
+      .slice(0, 5)
+      .map((item: any) => ({
+        title: item.name || '未知电影', 
+        rating: item.hot || '暂无评分', // 使用热度值作为评分替代
+        url: item.url || '#'
+      }));
     
-    // [新] 使用 cheerio 加载HTML，让我们可以像jQuery一样操作它
-    const $ = cheerio.load(html);
-    
-    // [新] 定位到 id 为 "nowplaying" 的区域中的电影列表
-    const movieListItems = $('#nowplaying .list-item');
-    
-    const finalMovies: any[] = [];
-
-    // [新] 遍历每一个电影条目，并从中提取信息
-    movieListItems.each((index, element) => {
-      // 使用 .data() 方法获取 HTML 元素上的 data-* 属性值
-      const title = $(element).data('title');
-      const rating = $(element).data('score');
-      const url = $(element).find('.poster a').attr('href');
-
-      if (title && url) {
-        finalMovies.push({
-          title: title,
-          rating: rating || '暂无评分',
-          url: url
-        });
-      }
-    });
-
-    // 只返回前5条结果
-    const top5Movies = finalMovies.slice(0, 5);
-
-    // 缓存1小时
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=600');
-    res.status(200).json(top5Movies);
+    // 设置缓存
+    res.setHeader('Cache-control', 's-maxage=3600, stale-while-revalidate=600'); // 缓存1小时
+    res.status(200).json(finalMovies);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '未知错误';
