@@ -5,15 +5,15 @@ const prompts = [
   {
     id: 'news' as Flow,
     title: '俗世趣闻',
-    description: '最近有什么新鲜事？想聊聊新闻热点、明星八卦，还是拼好饭的中毒幻想？赶紧凑过来，和本道仙唠一唠。',
+    description: '最近有什么新鲜事？想聊聊社会热点、明星八卦，还是拼好饭的中毒幻想？赶紧凑过来，和本道仙唠一唠。',
     icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[var(--nav-background-color)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 12h6m-1-4h1" />
         </svg>
     ),
     intro: {
-      text: '哼，想听哪种？',
-      replies: ['明星八卦', '社会热点', '小道仙的幻想']
+      text: '哼，想听什么？',
+      replies: ['新鲜事', '上映新片', '小道仙的幻想']
     }
   },
   {
