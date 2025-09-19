@@ -1,7 +1,7 @@
 // src/services/geminiService.ts
 
 // 导入项目所需的类型
-import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingChunk } from '../types';
+import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingChunk } from '../types.js';
 
 // --- 中转站 API 配置 ---
 const API_BASE_URL = 'https://api.bltcy.ai/v1';
@@ -11,23 +11,17 @@ const API_KEY = import.meta.env.VITE_API_KEY;
 const fetchDoc = (url: string) => fetch(url).then(res => res.text());
 const fetchJson = (url:string) => fetch(url).then(res => res.json());
 
-// Cache for assets (保持不变)
-let designDocsCache: Record<string, string> = {};
-let flowsConfigCache: any = null;
-
+// Cache for assets (已移除全局缓存，确保在 Serverless 环境中稳定)
 const loadAssets = async () => {
-    if (Object.keys(designDocsCache).length > 0 && flowsConfigCache) {
-        return { designDocs: designDocsCache, flowsConfig: flowsConfigCache };
-    }
     const [story, truth, draw, flows] = await Promise.all([
         fetchDoc('/Story_Chain_Database.md'),
         fetchDoc('/Truth_Or_Dare_Database.md'),
         fetchDoc('/You_Describe_I_Draw_Database.md'),
         fetchJson('/flows.json'),
     ]);
-    designDocsCache = { story, truth, draw };
-    flowsConfigCache = flows;
-    return { designDocs: designDocsCache, flowsConfig: flowsConfigCache };
+    const designDocs = { story, truth, draw };
+    const flowsConfig = flows;
+    return { designDocs, flowsConfig };
 };
 
 // Helper to convert a File to a base64 string (保持不变)
@@ -196,18 +190,44 @@ export async function* sendMessageStream(
     try {
         let systemInstruction = await getSystemInstruction(intimacy, userName, flow);
         let newsContext: string | null = null;
-        
-        if (flow === 'gossip') {
-            newsContext = await getWeiboNewsFromBackend('entertainment');
-        } else if (flow === 'social_news') {
-            newsContext = await getWeiboNewsFromBackend('social');
+
+        // 统一抓取前十条热搜，并传递给AI
+        let allTrends: any[] | null = null;
+        if (flow === 'gossip' || flow === 'social_news') {
+            try {
+                // 调用后端 API，获取前十条热搜
+                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/getWeiboNews`);
+                if (response.ok) {
+                    allTrends = await response.json();
+                }
+            } catch (e) {
+                console.error("无法获取热搜数据:", e);
+            }
+        }
+
+        if (allTrends && allTrends.length > 0) {
+            const formattedTrends = allTrends.map((item: any, index: number) => 
+                `[${index + 1}] ${item.title}`
+            ).join('\n');
+            
+            // 将所有热搜作为上下文，传递给AI
+            newsContext = `以下是微博热搜榜的前十条：\n\n${formattedTrends}`;
         }
 
         if (newsContext) {
-            systemInstruction += `\n\n**外部参考资料**:\n${newsContext}\n\n请你基于以上资料，结合自己的性格，对这些事发表评论或与用户展开讨论。`;
+            let categoryName = '';
+            if (flow === 'gossip') {
+                categoryName = '明星八卦';
+            } else if (flow === 'social_news') {
+                categoryName = '社会热点';
+            }
+            
+            // 明确要求AI先概述，再评论
+            systemInstruction += `\n\n**外部参考资料**:\n${newsContext}\n\n请你基于以上资料，找到其中属于【${categoryName}】分类的热搜，并对这些热搜进行概述，然后结合你的性格发表评论或与用户展开讨论。`;
         }
         
         const apiMessages = await convertToApiMessages(history, systemInstruction, text, imageFile);
+        
         const response = await fetch(`${API_BASE_URL}/chat/completions`, {
             method: 'POST',
             headers: {
