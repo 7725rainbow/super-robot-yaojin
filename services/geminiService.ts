@@ -85,20 +85,23 @@ async function getWeiboNewsFromBackend(): Promise<any[] | null> {
 /**
  * 新增：调用后端API来获取豆瓣电影信息
  */
+// src/services/geminiService.ts
+
+// ... (之前的代码保持不变)
+
 async function getDoubanMoviesFromBackend(): Promise<string | null> {
     try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-        const apiUrl = `${baseUrl}/api/douban-movie`;
-        console.log(`正在从 ${apiUrl} 获取豆瓣电影...`);
+        // ... (API 调用部分保持不变)
         const response = await fetch(apiUrl);
         if (!response.ok) {
             throw new Error('从后端API获取豆瓣电影信息失败');
         }
         const movies = await response.json();
+        
         if (movies && movies.length > 0) {
             const topMovies = movies.slice(0, 5); // 只取前5部电影
             const formattedMovies = topMovies.map((movie: any, index: number) => 
-                `[${index + 1}] ${movie.title} - 评分: ${movie.rating}`
+                `[${index + 1}] 《${movie.title}》- 评分: ${movie.rating} (链接: ${movie.url})` // 新增了链接
             ).join('\n');
             return `本道仙刚瞅了一眼，最近上映的电影倒是有点意思，这几部你看过吗？\n\n${formattedMovies}`;
         }
@@ -108,6 +111,8 @@ async function getDoubanMoviesFromBackend(): Promise<string | null> {
         return '本道仙的千里眼今天看不了电影了，找个时间再试试吧。';
     }
 }
+
+// ... (接下来的代码保持不变)
 
 const getSystemInstruction = async (intimacy: IntimacyLevel, userName: string, flow: Flow): Promise<string> => {
     const { designDocs, flowsConfig } = await loadAssets();
