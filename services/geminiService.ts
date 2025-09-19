@@ -2,6 +2,7 @@
 
 // 导入项目所需的类型
 import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingChunk } from '../types.js';
+import { getDaoistDailyIntro, handleDaoistDailyChoice } from './daoistDailyService.js';
 
 // --- 中转站 API 配置 ---
 const API_BASE_URL = 'https://api.bltcy.ai/v1';
@@ -67,29 +68,44 @@ const generateImageFromPrompt = async (prompt: string): Promise<string | null> =
 /**
  * 调用后端API来获取分类的微博热搜
  */
-async function getWeiboNewsFromBackend(category: 'entertainment' | 'social'): Promise<string> {
+async function getWeiboNewsFromBackend(): Promise<any[] | null> {
     try {
         const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-        const apiUrl = `${baseUrl}/api/getWeiboNews?category=${category}`;
-        console.log(`正在从 ${apiUrl} 获取指定分类的热搜...`);
-
+        const apiUrl = `${baseUrl}/api/getWeiboNews`;
+        console.log(`正在从 ${apiUrl} 获取微博热搜...`);
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('从后端API获取微博热搜失败');
-
-        const trends = await response.json();
-        const categoryName = category === 'entertainment' ? '明星八卦' : '社会热点';
-
-        if (trends && trends.length > 0) {
-            const formattedTrends = trends.map((item: any, index: number) => 
-                `[${index + 1}] ${item.title}`
-            ).join('\n');
-            return `本道仙刚看了一眼凡间的【${categoryName}】，现在正吵得火热的是这几件事：\n\n${formattedTrends}`;
-        }
-        return `本道仙看了一眼，【${categoryName}】今天风平浪静，没什么值得一提的破事。`;
+        return await response.json();
     } catch (error) {
         console.error("获取微博热搜失败:", error);
-        const categoryName = category === 'entertainment' ? '明星八卦' : '社会热点';
-        return `哎呀，本道仙的千里眼今天有点看不清【${categoryName}】的动向，稍后再试试吧。`;
+        return null;
+    }
+}
+
+/**
+ * 新增：调用后端API来获取豆瓣电影信息
+ */
+async function getDoubanMoviesFromBackend(): Promise<string | null> {
+    try {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        const apiUrl = `${baseUrl}/api/douban-movie`;
+        console.log(`正在从 ${apiUrl} 获取豆瓣电影...`);
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error('从后端API获取豆瓣电影信息失败');
+        }
+        const movies = await response.json();
+        if (movies && movies.length > 0) {
+            const topMovies = movies.slice(0, 5); // 只取前5部电影
+            const formattedMovies = topMovies.map((movie: any, index: number) => 
+                `[${index + 1}] ${movie.title} - 评分: ${movie.rating}`
+            ).join('\n');
+            return `本道仙刚瞅了一眼，最近上映的电影倒是有点意思，这几部你看过吗？\n\n${formattedMovies}`;
+        }
+        return '最近没什么新片，本道仙都快闷死了。';
+    } catch (error) {
+        console.error("获取豆瓣电影信息失败:", error);
+        return '本道仙的千里眼今天看不了电影了，找个时间再试试吧。';
     }
 }
 
@@ -118,12 +134,12 @@ const getSystemInstruction = async (intimacy: IntimacyLevel, userName: string, f
     `;
 
     switch (flow) {
-        case 'gossip': // 对应“明星八卦”
-            instruction += "\n\n**当前模式：俗世趣闻-明星八卦**\n你正在和用户聊人类世界的明星八卦。";
+        case 'news': // 对应“俗世趣闻”
+            instruction += "\n\n**当前模式：俗世趣闻-新鲜事**\n你正在和用户聊人类世界的【新鲜事】。";
             break;
-        case 'social_news': // 对应“社会热点”
-            instruction += "\n\n**当前模式：俗世趣闻-社会热点**\n你正在和用户聊人类世界的社会热点。";
-            break;
+        case 'movie': // 新增：对应“上映新片”
+             instruction += "\n\n**当前模式：俗世趣闻-新片上映**\n你正在和用户聊最近的电影。";
+             break;
         case 'guidance':
             instruction += `\n\n**当前模式：仙人指路**\n用户正在向你寻求指引。你必须严格遵循以下JSON中定义的“三步对话模式”来与用户互动。绝不能跳过任何步骤，也不能一次性回答所有问题。
             \`\`\`json
@@ -148,7 +164,8 @@ const getSystemInstruction = async (intimacy: IntimacyLevel, userName: string, f
             `;
             break;
         case 'daily':
-             instruction += "\n\n**当前模式：道仙日常**\n用户对你作为兽人的日常生活感到好奇。分享一些你的趣事、习性或对人类世界的看法。这是一个增进感情、提升亲密度的绝佳机会。";
+             // 新增：让AI在daily模式下自由对话
+             instruction += "\n\n**当前模式：道仙日常**\n你正在和用户闲聊你的日常。请以你的蛇兽人性格，基于用户的输入，自由地进行对话。你的日常设定包括：看过的电影和书，以及最近发生的趣事。请将这些内容融入你的回答，让对话显得自然有趣。";
             break;
         default: // 'default'
              instruction += "\n\n**当前模式：闲聊**\n这是你们的默认相处模式。自由发挥，根据用户的话题进行回应，自然地展现你的蛇兽人性格和能力。";
@@ -189,44 +206,50 @@ export async function* sendMessageStream(
 ): AsyncGenerator<Partial<Message>> {
     try {
         let systemInstruction = await getSystemInstruction(intimacy, userName, flow);
-        let newsContext: string | null = null;
+        let externalContext: string | null = null;
+        let finalPrompt = text; // 新增变量，用于存储最终的提示语
 
-        // 统一抓取前十条热搜，并传递给AI
-        let allTrends: any[] | null = null;
-        if (flow === 'gossip' || flow === 'social_news') {
-            try {
-                // 调用后端 API，获取前十条热搜
-                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/getWeiboNews`);
-                if (response.ok) {
-                    allTrends = await response.json();
-                }
-            } catch (e) {
-                console.error("无法获取热搜数据:", e);
-            }
-        }
-
-        if (allTrends && allTrends.length > 0) {
-            const formattedTrends = allTrends.map((item: any, index: number) => 
-                `[${index + 1}] ${item.title}`
-            ).join('\n');
+        // 新增的逻辑: 处理道仙日常的对话流程
+        if (flow === 'daily') {
+            const lastUserMessage = history.length > 0 ? history[history.length - 1] : null;
             
-            // 将所有热搜作为上下文，传递给AI
-            newsContext = `以下是微博热搜榜的前十条：\n\n${formattedTrends}`;
-        }
-
-        if (newsContext) {
-            let categoryName = '';
-            if (flow === 'gossip') {
-                categoryName = '明星八卦';
-            } else if (flow === 'social_news') {
-                categoryName = '社会热点';
+            // 如果是首次进入 'daily' flow，则发送开场白
+            if (!lastUserMessage || (lastUserMessage.sender !== 'assistant' && lastUserMessage.text !== getDaoistDailyIntro())) {
+                const introText = getDaoistDailyIntro();
+                yield { text: introText, quickReplies: ['最近看了...', '随便聊聊...', '我的记仇小本本', '最近买了...'], isLoading: false };
+                return;
+            } else {
+                // 根据用户的选择，生成一个更具体的指令来引导AI
+                finalPrompt = handleDaoistDailyChoice(text);
+                // 这里我们不需要将指令发送给AI，因为AI已经进入了daily模式
+                // 而是将这个指令作为对话的一部分，发送给AI
             }
-            
-            // 明确要求AI先概述，再评论
-            systemInstruction += `\n\n**外部参考资料**:\n${newsContext}\n\n请你基于以上资料，找到其中属于【${categoryName}】分类的热搜，并对这些热搜进行概述，然后结合你的性格发表评论或与用户展开讨论。`;
         }
         
-        const apiMessages = await convertToApiMessages(history, systemInstruction, text, imageFile);
+        // 旧的逻辑: 处理新闻和电影的外部参考
+        if (flow === 'news') {
+            const allTrends = await getWeiboNewsFromBackend();
+            if (allTrends && allTrends.length > 0) {
+                const formattedTrends = allTrends.map((item: any, index: number) => 
+                    `[${index + 1}] ${item.title}`
+                ).join('\n');
+                externalContext = `以下是微博热搜榜的前十条新鲜事：\n\n${formattedTrends}`;
+            }
+        } else if (flow === 'movie') {
+            externalContext = await getDoubanMoviesFromBackend();
+        }
+
+        if (externalContext) {
+            systemInstruction += `\n\n**外部参考资料**:\n${externalContext}`;
+            
+            if (flow === 'news') {
+                 systemInstruction += `\n\n请你基于以上资料，对这些新鲜事进行概述，然后结合你的性格发表评论或与用户展开讨论。`;
+            } else if (flow === 'movie') {
+                systemInstruction += `\n\n请你基于以上电影信息，结合你的性格，询问用户有什么想看的。你的回复语气必须是骄蛮和毒舌的。`;
+            }
+        }
+        
+        const apiMessages = await convertToApiMessages(history, systemInstruction, finalPrompt, imageFile);
         
         const response = await fetch(`${API_BASE_URL}/chat/completions`, {
             method: 'POST',
@@ -326,3 +349,4 @@ export async function* sendMessageStream(
         yield { text: '', errorType: errorType, isLoading: false };
     }
 }
+
