@@ -1,8 +1,8 @@
 // frontend/api/douban-movie.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// [最终方案] 调用你自己部署的、稳定可靠的API服务
-const MY_API_BASE_URL = "https://hot-daily-eta.vercel.app"; // 已更新为您自己的API地址
+// [最终方案] 调用你自己部署在 Vercel 上的、稳定可靠的API服务
+const MY_API_BASE_URL = "https://dailyhot-puce.vercel.app"; // 已更新为您自己的API地址
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
