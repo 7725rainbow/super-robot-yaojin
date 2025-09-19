@@ -2,7 +2,7 @@
 
 // 导入项目所需的类型
 import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingChunk } from '../types.js';
-import { getDaoistDailyIntro, handleDaoistDailyChoice } from './daoistDailyService.js';
+import { getDaoistDailyIntro, handleDaoistDailyChoice } from './daoistDailyService';
 
 // --- 中转站 API 配置 ---
 const API_BASE_URL = 'https://api.bltcy.ai/v1';
