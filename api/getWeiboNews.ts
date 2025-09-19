@@ -1,5 +1,7 @@
+// frontend/api/getWeiboNews.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+// 新的 API 地址，直接指向热榜API
 const WEIBO_HOT_TREND_API = "https://api-hot.imsyy.top/weibo";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -30,9 +32,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const finalTrends = allTrends
       .slice(0, 10)
       .map((item: any) => ({
-        // 将字段名从 name 和 link 修正为 title 和 url
-        title: item.title || '未知热点', 
-        url: item.url || '#'
+        title: item.name || '未知热点', 
+        url: item.link || '#'
       }));
     
     res.status(200).json(finalTrends);
