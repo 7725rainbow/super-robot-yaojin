@@ -86,7 +86,7 @@ async function getWeiboNewsFromBackend(): Promise<any[] | null> {
 async function getDoubanMoviesFromBackend(): Promise<any[] | null> {
     try {
         // 直接请求我们部署在 Vercel 上的 API 端点
-        const response = await fetch('/api/maoyan-movie');
+        const response = await fetch('/api/douban-movie');
         if (!response.ok) throw new Error('从后端API获取猫眼电影信息失败');
         return await response.json();
     } catch (error) {
