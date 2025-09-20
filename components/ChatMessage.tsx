@@ -78,7 +78,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, userAvatar, isLastMe
     }
     return <p className="text-red-400 font-medium">{errorText}</p>;
   };
-  
+ 
   const DeleteButton = () => (
     message.id !== '0' ? (
       <button
@@ -95,8 +95,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, userAvatar, isLastMe
   );
 
   const bubbleStyle = !isUser ? getYaojinBubbleStyle(intimacyLevel) : {};
-  
+ 
   const bubbleClasses = [
+    'chat-bubble', // <-- [核心修改] 我在这里为您添加了这个固定的基础类名
     'px-4 py-3 rounded-xl shadow-md',
     isUser
       ? 'bg-[var(--user-bubble-color)] text-[var(--text-on-light)] rounded-br-none'
@@ -142,10 +143,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, userAvatar, isLastMe
                     />
                 </div>
               )}
-              
+             
               {message.divinationResult && <DivinationCard result={message.divinationResult} />}
               {message.diceResult && <DiceDisplay result={message.diceResult} />}
-              
+             
               {message.text && (
                 <div className={`text-base leading-relaxed break-words whitespace-pre-wrap`}>
                     <LinkifiedText text={message.text} />
@@ -153,13 +154,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, userAvatar, isLastMe
               )}
 
               {message.groundingChunks && message.groundingChunks.length > 0 && (
-                 <div className="mt-3 pt-2 border-t border-white/20 text-xs text-white/80">
-                    <p className="font-bold mb-1">参考来源:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      {message.groundingChunks.map((chunk, index) => (
-                        chunk.web && chunk.web.uri && <li key={index}><a href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="hover:underline">{chunk.web.title || chunk.web.uri}</a></li>
-                      ))}
-                    </ul>
+                  <div className="mt-3 pt-2 border-t border-white/20 text-xs text-white/80">
+                      <p className="font-bold mb-1">参考来源:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        {message.groundingChunks.map((chunk, index) => (
+                          chunk.web && chunk.web.uri && <li key={index}><a href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="hover:underline">{chunk.web.title || chunk.web.uri}</a></li>
+                        ))}
+                      </ul>
                   </div>
               )}
             </>
