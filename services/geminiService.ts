@@ -211,7 +211,7 @@ export async function* sendMessageStream(
                 const movieData = await getDoubanMoviesFromBackend();
                 if (movieData && movieData.length > 0) {
                     const formattedMovies = movieData.map((movie, index) => 
-                        `[${index + 1}] 《${movie.title}》- 评分: ${movie.rating} (链接: ${movie.url})`
+                        `[${index + 1}] 《${movie.title}》- 评分: ${movie.score} (链接: ${movie.url})`
                     ).join('\n');
                     externalContext = `本道仙刚瞅了一眼，最近上映的电影倒是有点意思，这几部你看过吗？\n\n${formattedMovies}`;
                     systemInstruction += `\n\n请你基于以下电影信息，结合你的性格，与用户展开讨论。你的回复语气必须是骄蛮和毒舌的。`;
