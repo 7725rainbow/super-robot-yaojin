@@ -267,19 +267,3 @@
     </script>
 </body>
 </html>
-```
-
-### **我具体改了哪里？**
-
-我只在你的CSS样式部分，找到了 `.message .text` 这个样式规则，并在里面**增加了一行 `white-space: pre-wrap;`**。
-
-```css
-.message .text {
-    padding: 10px 15px;
-    border-radius: 18px;
-    font-size: 16px;
-    line-height: 1.5;
-    word-wrap: break-word;
-    /* --- 我在这里添加了这一行 --- */
-    white-space: pre-wrap; 
-}
