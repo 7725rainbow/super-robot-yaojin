@@ -40,3 +40,24 @@
 .guide-prompts-animation > *:nth-child(4) {
   animation-delay: 0.75s;
 }
+.chat-bubble {
+  max-width: 80%;
+  word-wrap: break-word; 
+
+  /* 使用 clamp() 函数让字体大小自适应 */
+  font-size: clamp(14px, 1.2vw + 10px, 16px);
+}
+
+/* 当屏幕宽度小于 768px 时 (平板和手机) */
+@media (max-width: 768px) {
+  .chat-bubble {
+    max-width: 85%;
+  }
+}
+
+/* 当屏幕宽度小于 480px 时 (手机) */
+@media (max-width: 480px) {
+  .chat-bubble {
+    max-width: 90%;
+  }
+}
