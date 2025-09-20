@@ -249,7 +249,7 @@ export async function* sendMessageStream(
                 'User-Agent': 'DMXAPI/1.0.0 ( https://api.bltcy.ai )',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model: 'gemini-pro', messages: apiMessages, stream: true }),
+            body: JSON.stringify({ model: 'gemini-2.5-flash', messages: apiMessages, stream: true }),
         });
 
         if (!response.ok) {
