@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
-import cheerio from 'cheerio';
+import { load } from 'cheerio'; // <--- 这里是修改点
 
 interface Movie {
   title: string;
@@ -19,7 +19,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
       },
     });
 
-    const $ = cheerio.load(data);
+    const $ = load(data); // <--- 这里是修改点
     const movies: Movie[] = [];
 
     $('#content > div > div.article > div > div > table').each((i, element) => {
