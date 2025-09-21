@@ -25,26 +25,50 @@ const daoistDailyData = {
 
 const getRandomChoice = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
 
-export const handleDaoistDailyChoice = (choice: string): string => {
-    if (choice.includes("最近看了")) {
-        const category = getRandomChoice(Object.keys(daoistDailyData));
-        const item = getRandomChoice(daoistDailyData[category as keyof typeof daoistDailyData]);
-        return `"${item.name}"? 呵，本道仙最近是‘看’了。我的评价是：${item.opinion} ${item.question}`;
-    } else if (choice.includes("随便聊聊")) {
-        const rituals = [
-            `哼，本道仙今天早上给自己抽了张‘太阳’牌，这意味着我今天会光芒万丈。看在你这么可怜的份上，分你一点光，你今天应该也会挺顺的。`,
-            `啧啧，本道仙去看了看最近你们的流行，感觉眼睛需要用符水洗一洗。`
-        ];
-        return getRandomChoice(rituals);
-    } else if (choice.includes("我的记仇小本本")) {
-        return `今天又遇到个奇葩客人，问了一堆蠢问题最后还想赖账。我已经把他加到我的小本本里了。说起来，你最近有没有遇到什么讨厌的家伙？`;
-    } else if (choice.includes("最近买了")) {
-        return `本道仙最近给自己添了件新宝贝——一块上好的紫水晶，据说能增强第六感。看这光泽，这通透度，啧啧，不是凡品。你呢？最近有没有花钱给自己买点什么好东西？让我看看你的品味有没有长进。`;
-    } else {
-        return `你这小脑袋瓜在想什么？说些本道仙能听懂的。`;
-    }
+// === 核心修改：移除if/else，使用函数映射 ===
+// 将不同的回复逻辑封装到不同的函数中
+const handleRandomDailyTopic = (): string => {
+    const rituals = [
+        `哼，本道仙今天早上给自己抽了张‘太阳’牌，这意味着我今天会光芒万丈。看在你这么可怜的份上，分你一点光，你今天应该也会挺顺的。`,
+        `啧啧，本道仙去看了看最近你们的流行，感觉眼睛需要用符水洗一洗。`
+    ];
+    return getRandomChoice(rituals);
 };
 
+const handleBookOrMovieTopic = (): string => {
+    const category = getRandomChoice(Object.keys(daoistDailyData));
+    const item = getRandomChoice(daoistDailyData[category as keyof typeof daoistDailyData]);
+    return `"${item.name}"? 呵，本道仙最近是‘看’了。我的评价是：${item.opinion} ${item.question}`;
+};
+
+const handleGrudgeTopic = (): string => {
+    return `今天又遇到个奇葩客人，问了一堆蠢问题最后还想赖账。我已经把他加到我的小本本里了。说起来，你最近有没有遇到什么讨厌的家伙？`;
+};
+
+const handleShoppingTopic = (): string => {
+    return `本道仙最近给自己添了件新宝贝——一块上好的紫水晶，据说能增强第六感。看这光泽，这通透度，啧啧，不是凡品。你呢？最近有没有花钱给自己买点什么好东西？让我看看你的品味有没有长进。`;
+};
+
+// 使用一个映射表来代替 if/else 链
+const dailyTopicHandlers: { [key: string]: () => string } = {
+    "最近看了": handleBookOrMovieTopic,
+    "随便聊聊": handleRandomDailyTopic,
+    "我的记仇小本本": handleGrudgeTopic,
+    "最近买了": handleShoppingTopic,
+};
+
+// 导出主处理函数，它接收一个明确的“子意图”
+// `chat.ts` 里的 triageModel 会负责将用户的输入映射到这里的 key
+export const handleDaoistDailyChoice = (subTopic: string): string => {
+    const handler = dailyTopicHandlers[subTopic];
+    if (handler) {
+        return handler();
+    }
+    // 如果没有匹配的子意图，返回默认回复
+    return `你这小脑袋瓜在想什么？说些本道仙能听懂的。`;
+};
+
+// 保持不变，因为它是一个流程的介绍语
 export const getDaoistDailyIntro = (): string => {
     return `哼，别盯着本道仙发呆了。既然你这么闲得慌，本道仙就勉为其难，让你多了解我一点好了。想知道什么？`;
 };
