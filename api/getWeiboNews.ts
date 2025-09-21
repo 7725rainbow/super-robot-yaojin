@@ -1,11 +1,8 @@
-// pages/api/getWeiboNews.ts
-
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// 从环境变量中安全地读取Cookie
 const WEIBO_COOKIE = process.env.WEIBO_COOKIE;
 
-// 使用你提供的API地址
+// 使用你指定的API地址
 const WEIBO_API_URL = 'https://m.weibo.cn/api/container/getIndex?containerid=106003type%3D25%26t%3D3%26disable_hot%3D1%26filter_type%3Drealtimehot';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -17,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const response = await fetch(WEIBO_API_URL, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Version/108.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
         'Cookie': WEIBO_COOKIE,
       }
     });
