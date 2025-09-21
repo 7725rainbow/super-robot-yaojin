@@ -1,9 +1,12 @@
 // pages/api/chat.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-port * as character from './core/characterSheet';
-import { Message, IntimacyLevel, Flow } from '../types'; 
-import { handleDaoistDailyChoice } from './services/daoistDailyService';
+// 使用新的别名导入，@/ 代表项目根目录
+import * as character from '@/core/characterSheet';
+import { handleDaoistDailyChoice } from '@/services/daoistDailyService';
+// 确保 types 文件也通过 @/ 别名导入
+import { Message, IntimacyLevel, Flow } from '@/types';
+
 
 // 获取环境变量中的API密钥
 const API_KEY = process.env.GEMINI_API_KEY;
