@@ -7,10 +7,7 @@ import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingCh
 import { getDaoistDailyIntro, handleDaoistDailyChoice } from '../services/daoistDailyService'; 
 
 // === 从前端服务文件中迁移过来的后端函数 ===
-// 因为这些函数是调用 /api/getWeiboNews 和 /api/douban-movie，
-// 它们本身也是后端API，所以这些调用逻辑应该在后端文件里。
 async function getWeiboNewsFromBackend(): Promise<any[] | null> {
-    // 你的微博API调用逻辑
     try {
         const response = await fetch('/api/getWeiboNews');
         if (!response.ok) throw new Error('Failed to fetch Weibo news from backend API');
@@ -22,7 +19,6 @@ async function getWeiboNewsFromBackend(): Promise<any[] | null> {
 }
 
 async function getDoubanMoviesFromBackend(): Promise<any[] | null> {
-    // 你的豆瓣API调用逻辑
     try {
         const response = await fetch('/api/douban-movie');
         if (!response.ok) throw new Error('Failed to fetch Douban movie info from backend API');
@@ -84,6 +80,7 @@ async function* sendMessageStream(
 ): AsyncGenerator<Partial<Message>> {
     
     try {
+        // 修正: 确保函数调用时带有 ()
         let systemInstruction = getSystemInstruction(intimacy, userName, flow); 
         let externalContext: string | null = null;
         let finalPrompt = text;
@@ -91,7 +88,6 @@ async function* sendMessageStream(
         if (flow === 'news') {
             if (text.includes('新鲜事')) {
                 systemInstruction += `\n${character.newsTopic.subTopics['新鲜事']}`;
-                // 在这里调用获取外部数据的函数
                 const newsData = await getWeiboNewsFromBackend(); 
                 if (newsData && newsData.length > 0) {
                     const formattedTrends = newsData.map((item, index) => `[${index + 1}] ${item.title}`).join('\n');
@@ -99,7 +95,6 @@ async function* sendMessageStream(
                 }
             } else if (text.includes('上映新片')) {
                 systemInstruction += `\n${character.newsTopic.subTopics['上映新片']}`;
-                // 在这里调用获取外部数据的函数
                 const movieData = await getDoubanMoviesFromBackend(); 
                 if (movieData && movieData.length > 0) {
                     const formattedMovies = movieData.map((movie, index) => `[${index + 1}] 《${movie.title}》- 评分: ${movie.score} (链接: ${movie.url})`).join('\n');
@@ -109,6 +104,7 @@ async function* sendMessageStream(
                 systemInstruction += `\n${character.newsTopic.subTopics['小道仙的幻想']}`;
             }
         } else if (flow === 'daily') {
+            // 修正: 确保函数调用时带有 ()
             finalPrompt = handleDaoistDailyChoice(text);
         }
         
@@ -116,6 +112,7 @@ async function* sendMessageStream(
             systemInstruction += `\n\n**请你基于以下外部参考资料，与用户展开对话**:\n${externalContext}`;
         }
         
+        // 修正: 确保函数调用时带有 ()
         const apiMessages = convertToApiMessages(history, systemInstruction, finalPrompt, imageBase64);
         
         const response = await chatModel.generateContentStream({
@@ -145,6 +142,7 @@ async function* sendMessageStream(
     }
 }
 
+// 修正: getSystemInstruction是一个同步函数，不需要async
 const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: Flow): string => {
     let instruction = `你是${character.persona.name}，${character.persona.description}
     你的语言和行为必须严格遵守以下规则：
@@ -187,7 +185,7 @@ const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: F
     return instruction;
 };
 
-// 后端函数：转换消息格式
+// 修正: convertToApiMessages是一个同步函数，不需要async
 const convertToApiMessages = (history: Message[], systemInstruction: string, text: string, imageBase64: string | null) => {
     const apiMessages: any[] = [{ role: 'system', parts: [{ text: systemInstruction }] }];
     for (const msg of history) {
@@ -218,7 +216,7 @@ const convertToApiMessages = (history: Message[], systemInstruction: string, tex
     return apiMessages;
 };
 
-// Vercel/Next.js 会自动将这个文件映射到 /api/chat 路由
+// Vercel/Next.js maps this file to the /api/chat route
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
         res.setHeader('Allow', ['POST']);
