@@ -4,29 +4,28 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => {
   if (command === 'build') {
-    // Production build ('npm run build') configuration
+    // 生产构建 ('npm run build') 配置
     return {
       plugins: [react()],
-      // The `base` property:
-      // If your application is deployed to a root path like 'https://your-app.vercel.app/',
-      // there's no need to set `base` or it should be set to `'/'`.
-      // It's recommended to remove it when deploying to Vercel's root domain,
-      // especially if it was previously set for GitHub Pages sub-path deployment.
-      // base: '/', 
       
+
       build: {
-        outDir: 'dist', 
-        sourcemap: false, 
+        outDir: 'dist',
+        sourcemap: false, // 生产构建中禁用 source map 以减少文件大小
+        
+        // 如果遇到 Rollup 无法解析特定依赖的问题，可以尝试在这里将其外部化
+        // 例如：
+        // rollupOptions: {
+        //   external: ['@google/generative-ai']
+        // }
       },
     };
   } else {
-    // Development mode ('npm run dev') configuration
+    // 开发模式 ('npm run dev') 配置
     return {
       plugins: [react()],
       server: {
-        // Since the Gemini API SDK is called directly on the client-side,
-        // a proxy is not needed for this application's setup.
-        port: 5173, 
+        port: 5173,
       },
     };
   }
