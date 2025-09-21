@@ -7,6 +7,8 @@ import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingCh
 import { getDaoistDailyIntro, handleDaoistDailyChoice } from '../services/daoistDailyService'; 
 
 // === 从前端服务文件中迁移过来的后端函数 ===
+// 因为这些函数是调用 /api/getWeiboNews 和 /api/douban-movie，
+// 它们本身也是后端API，所以这些调用逻辑应该在后端文件里。
 async function getWeiboNewsFromBackend(): Promise<any[] | null> {
     // 你的微博API调用逻辑
     try {
