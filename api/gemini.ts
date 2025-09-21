@@ -1,8 +1,9 @@
+// api/gemini.ts
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Get API key from environment variables.
-// IMPORTANT: Never hardcode your API key!
 const API_KEY = process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
