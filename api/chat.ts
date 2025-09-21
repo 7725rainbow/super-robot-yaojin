@@ -2,9 +2,9 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import * as character from '../../core/characterSheet.js';
-import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingChunk } from '../../types.js';
-import { getDaoistDailyIntro, handleDaoistDailyChoice } from '../../services/daoistDailyService';
+import * as character from '../core/characterSheet'; // 修正路径
+import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingChunk } from '../types'; // 修正路径
+import { getDaoistDailyIntro, handleDaoistDailyChoice } from '../services/daoistDailyService'; // 修正路径
 
 // 获取环境变量中的API密钥
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -55,35 +55,30 @@ async function* sendMessageStream(
     userName: string,
     flow: Flow
 ): AsyncGenerator<Partial<Message>> {
-    // ... [以下逻辑保持不变] ...
     
     try {
-        // ... (获取系统指令、外部上下文等逻辑) ...
-        let systemInstruction = await getSystemInstruction(intimacy, userName, flow);
+        let systemInstruction = getSystemInstruction(intimacy, userName, flow); // 修正：getSystemInstruction不再是async
         let externalContext: string | null = null;
         let finalPrompt = text;
         
-        // ... (处理流程、获取外部数据等逻辑) ...
         if (flow === 'news') {
-          if (text.includes('新鲜事')) {
-            systemInstruction += `\n${character.newsTopic.subTopics['新鲜事']}`;
-          } else if (text.includes('上映新片')) {
-            systemInstruction += `\n${character.newsTopic.subTopics['上映新片']}`;
-          } else if (text.includes('小道仙的幻想')) {
-            systemInstruction += `\n${character.newsTopic.subTopics['小道仙的幻想']}`;
-          }
-        }
-        else if (flow === 'daily') {
-          finalPrompt = handleDaoistDailyChoice(text);
+            if (text.includes('新鲜事')) {
+                systemInstruction += `\n${character.newsTopic.subTopics['新鲜事']}`;
+            } else if (text.includes('上映新片')) {
+                systemInstruction += `\n${character.newsTopic.subTopics['上映新片']}`;
+            } else if (text.includes('小道仙的幻想')) {
+                systemInstruction += `\n${character.newsTopic.subTopics['小道仙的幻想']}`;
+            }
+        } else if (flow === 'daily') {
+            finalPrompt = handleDaoistDailyChoice(text);
         }
         
         if (externalContext) {
-          systemInstruction += `\n\n**请你基于以下外部参考资料，与用户展开对话**:\n${externalContext}`;
+            systemInstruction += `\n\n**请你基于以下外部参考资料，与用户展开对话**:\n${externalContext}`;
         }
         
         const apiMessages = convertToApiMessages(history, systemInstruction, finalPrompt, imageBase64);
         
-        // 调用 Gemini API 的流式接口
         const response = await chatModel.generateContentStream({
             contents: apiMessages,
         });
@@ -91,23 +86,28 @@ async function* sendMessageStream(
         for await (const chunk of response.stream) {
             const textDelta = chunk.text;
             if (textDelta) {
-                // 将每个数据块作为 JSON 发送给前端
                 yield { text: textDelta, isLoading: true };
             }
         }
-        // ... (处理特殊标记和生成图片等逻辑) ...
-        // 注意：生成图片等需要额外 API 调用的逻辑也应该在这里实现
-        // ...
         
         yield { isLoading: false };
+
     } catch (error) {
-        // ... (错误处理逻辑保持不变) ...
+        console.error("API error:", error);
+        let errorType: 'rate_limit' | 'safety' | 'server' | 'unknown' = 'server';
+        if (error instanceof Error) {
+            const message = error.message.toLowerCase();
+            if (message.includes('safety')) errorType = 'safety';
+            else if (message.includes('quota') || message.includes('rate limit') || message.includes('429')) errorType = 'rate_limit';
+            else if (message.includes('server error') || message.includes('500') || message.includes('503')) errorType = 'server';
+            else errorType = 'unknown';
+        }
+        yield { text: '', errorType: errorType, isLoading: false };
     }
 }
 
-const getSystemInstruction = async (intimacy: IntimacyLevel, userName: string, flow: Flow): Promise<string> => {
-  // ... (保持不变) ...
-  let instruction = `你是${character.persona.name}，${character.persona.description}
+const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: Flow): string => { // 修正：移除 async
+    let instruction = `你是${character.persona.name}，${character.persona.description}
     你的语言和行为必须严格遵守以下规则：
     - 核心人设: ${character.persona.description}
     - 亲密度规则: ${character.persona.intimacyRules}
@@ -139,7 +139,7 @@ const getSystemInstruction = async (intimacy: IntimacyLevel, userName: string, f
             instruction += `\n**当前模式：俗世趣闻**\n${character.newsTopic.introduction}`;
             break;
         case 'daily':
-              instruction += `\n**当前模式：道仙日常**\n${character.dailyTopic.introduction}`;
+            instruction += `\n**当前模式：道仙日常**\n${character.dailyTopic.introduction}`;
             break;
         default:
             instruction += "\n**当前模式：闲聊**\n这是你们的默认相处模式。自由发挥，根据用户的话题进行回应，自然地展现你的性格和能力。";
@@ -168,7 +168,6 @@ const convertToApiMessages = (history: Message[], systemInstruction: string, tex
     const currentUserParts: any[] = [];
     if (text) { currentUserParts.push({ text }); }
     if (imageBase64) {
-      // 假设前端发送的base64不包含MIME类型头
       currentUserParts.push({
         inlineData: {
           data: imageBase64,
