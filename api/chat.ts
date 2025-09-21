@@ -2,11 +2,35 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-// 修正导入路径以匹配你的项目结构
 import * as character from '../core/characterSheet'; 
 import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingChunk } from '../types'; 
 import { getDaoistDailyIntro, handleDaoistDailyChoice } from '../services/daoistDailyService'; 
-import { getWeiboNewsFromBackend, getDoubanMoviesFromBackend } from '../services/externalDataService'; // 假设你将外部API调用也移到了一个单独的服务中
+
+// === 从前端服务文件中迁移过来的后端函数 ===
+async function getWeiboNewsFromBackend(): Promise<any[] | null> {
+    // 你的微博API调用逻辑
+    try {
+        const response = await fetch('/api/getWeiboNews');
+        if (!response.ok) throw new Error('Failed to fetch Weibo news from backend API');
+        return await response.json();
+    } catch (error) {
+        console.error("Failed to get Weibo news:", error);
+        return null;
+    }
+}
+
+async function getDoubanMoviesFromBackend(): Promise<any[] | null> {
+    // 你的豆瓣API调用逻辑
+    try {
+        const response = await fetch('/api/douban-movie');
+        if (!response.ok) throw new Error('Failed to fetch Douban movie info from backend API');
+        return await response.json();
+    } catch (error) {
+        console.error("Failed to get movie info:", error);
+        return null;
+    }
+}
+// === 迁移结束 ===
 
 // 获取环境变量中的API密钥
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -65,14 +89,16 @@ async function* sendMessageStream(
         if (flow === 'news') {
             if (text.includes('新鲜事')) {
                 systemInstruction += `\n${character.newsTopic.subTopics['新鲜事']}`;
-                const newsData = await getWeiboNewsFromBackend(); // 在后端调用外部API
+                // 在这里调用获取外部数据的函数
+                const newsData = await getWeiboNewsFromBackend(); 
                 if (newsData && newsData.length > 0) {
                     const formattedTrends = newsData.map((item, index) => `[${index + 1}] ${item.title}`).join('\n');
                     externalContext = `以下是微博热搜榜的新鲜事：\n\n${formattedTrends}`;
                 }
             } else if (text.includes('上映新片')) {
                 systemInstruction += `\n${character.newsTopic.subTopics['上映新片']}`;
-                const movieData = await getDoubanMoviesFromBackend(); // 在后端调用外部API
+                // 在这里调用获取外部数据的函数
+                const movieData = await getDoubanMoviesFromBackend(); 
                 if (movieData && movieData.length > 0) {
                     const formattedMovies = movieData.map((movie, index) => `[${index + 1}] 《${movie.title}》- 评分: ${movie.score} (链接: ${movie.url})`).join('\n');
                     externalContext = `本道仙刚瞅了一眼，最近上映的电影倒是有点意思，这几部你看过吗？\n\n${formattedMovies}`;
@@ -117,7 +143,6 @@ async function* sendMessageStream(
     }
 }
 
-// 后端函数：获取系统指令
 const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: Flow): string => {
     let instruction = `你是${character.persona.name}，${character.persona.description}
     你的语言和行为必须严格遵守以下规则：
