@@ -1,8 +1,19 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "/api/chat.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "build": {
+    "includeFiles": [
+      "core/**",
+      "services/**",
+      "types/**"
+    ]
+  }
 }
