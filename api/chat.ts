@@ -139,7 +139,6 @@ async function* sendMessageStream(
     }
 }
 
-// 后端函数：获取系统指令 (同步)
 const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: Flow): string => {
     let instruction = `你是${character.persona.name}，${character.persona.description}
     你的语言和行为必须严格遵守以下规则：
@@ -182,7 +181,6 @@ const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: F
     return instruction;
 };
 
-// 后端函数：转换消息格式 (同步)
 const convertToApiMessages = (history: Message[], systemInstruction: string, text: string, imageBase64: string | null) => {
     const apiMessages: any[] = [{ role: 'system', parts: [{ text: systemInstruction }] }];
     for (const msg of history) {
