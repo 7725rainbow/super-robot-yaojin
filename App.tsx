@@ -13,11 +13,11 @@ import { sendMessageStream } from './services/geminiService';
 import { getCurrentUser, logout } from './services/authService';
 
 const INTIMACY_LEVELS = [
-    { level: 1, name: '路人甲乙', min: 0 },
-    { level: 2, name: '普通客户', min: 21 },
-    { level: 3, name: '常客/损友', min: 41 },
-    { level: 4, name: '被偏爱的笨蛋', min: 61 },
-    { level: 5, name: '灵魂伴侣', min: 81 },
+    { level: 1, name: '渡劫道友', min: 0 },
+    { level: 2, name: '有缘人', min: 21 },
+    { level: 3, name: '道仙常客', min: 41 },
+    { level: 4, name: '道仙金主', min: 61 },
+    { level: 5, name: '尧金的主人', min: 81 },
 ];
 
 const GUEST_USER: User = { username: '临时道友', email: 'guest_session', isGuest: true };
