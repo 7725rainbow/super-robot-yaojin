@@ -1,34 +1,27 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
     "skipLibCheck": true,
-    "types": [
-      "node"
-    ],
     "moduleResolution": "bundler",
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "allowJs": true,
-    "jsx": "react-jsx",
-    "paths": {
-      // 在这里添加路径别名，@/ 指向项目根目录
-      "@/*": [
-        "./*"
-      ]
-    },
     "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "noEmit": true,
+    "jsx": "react-jsx",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true
-  }
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@core/*": ["./core/*"],
+      "@services/*": ["./services/*"]
+    }
+  },
+  "include": ["api", "core", "services", "."]
 }
