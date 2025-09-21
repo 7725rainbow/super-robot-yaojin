@@ -1,6 +1,6 @@
 // Fix: Define interfaces for shared data structures.
 // Fix: Added specific flow types to support GuidePrompts and resolve type errors.
-export type Flow = 'default' | 'news' | 'guidance' | 'daily' | 'game' | 'daily_horoscope' | 'tarot_reading' | 'destined_romance' | 'career_compass';
+export type Flow = 'chat' | 'news' | 'guidance' | 'daily' | 'game';
 
 export interface User {
   username: string;
@@ -46,9 +46,6 @@ export interface Message {
   divinationResult?: DivinationResult;
   diceResult?: DiceResult;
   quickReplies?: string[];
-  intimacy?: IntimacyLevel; // Track intimacy at the time of message
-  // Fix: Added groundingChunks property to support search grounding results.
-  groundingChunks?: GroundingChunk[];
   notificationContent?: string;
   errorType?: 'rate_limit' | 'safety' | 'server' | 'unknown';
   generatedImageBase64?: string; // For AI-generated images in "You Describe, I Draw"
