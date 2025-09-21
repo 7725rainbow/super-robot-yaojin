@@ -1,15 +1,14 @@
-
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// [关键] 在这里的引号内，粘贴您上面提供的完整Cookie字符串
-const WEIBO_COOKIE = 'SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WW-9ad04DvNWnQsOyr3fjXG5JpX5KMhUgL.Foz4S0nXeKBEeK-2dJLoIEXLxKnL1hBLBonLxK-L1-qL12zLxK-LBKBLBKMLxKnLBK-LB.qLxKML1KeL1-et; SCF=AoJZvR5_GoT-kbb_4Ckk-g4B8EunQas1uh8ZQytRMGgnfG1ueH5iMqNfQpf38DzJKsk89XzfSB87aABjwrQ9ShA.; SUB=_2A25FwTr5DeRhGeRH7FoV8SrOyjmIHXVmvzIxrDV6PUJbktAbLWP8kW1NTYzAepUNwiAWL4yxFbjfOsOPY7EWam43; ALF=1760352169; MLOGIN=1; _T_WM=51651406047; XSRF-TOKEN=d49ab8; WEIBOCN_FROM=1110006030; mweibo_short_token=d9d5794511; M_WEIBOCN_PARAMS=luicode%3D20000174%26lfid%3D102803%26uicode%3D20000174';
+// Read the cookie securely from the environment variable
+const WEIBO_COOKIE = process.env.WEIBO_COOKIE;
 
-// 使用微博官方的手机版API地址
 const WEIBO_API_URL = 'https://m.weibo.cn/api/container/getIndex?containerid=106003type%3D25%26t%3D3%26disable_hot%3D1%26filter_type%3Drealtimehot';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (WEIBO_COOKIE.includes('粘贴')) {
-    return res.status(500).json({ error: '服务器端尚未配置微博Cookie' });
+  // If the environment variable isn't set, return an error
+  if (!WEIBO_COOKIE) {
+    return res.status(500).json({ error: '后端服务尚未配置微博Cookie' });
   }
 
   try {
@@ -36,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .filter((item: any) => item.desc)
       .slice(0, 10)
       .map((item: any) => ({
-        title: item.desc, 
+        title: item.desc,
         url: `https://m.s.weibo.com/weibo?q=${encodeURIComponent(`#${item.desc}#`)}`
       }));
     
