@@ -9,7 +9,8 @@ import NotificationMessage from './components/NotificationMessage';
 import ConfirmationModal from './components/ConfirmationModal';
 import AvatarSelectionModal from './components/AvatarSelectionModal';
 import { Message, IntimacyLevel, User, Flow } from './types';
-import { sendMessageStream } from './services/geminiService';
+// Removed: The function has been moved to the backend API.
+// import { sendMessageStream } from './services/geminiService';
 import { getCurrentUser, logout } from './services/authService';
 
 const INTIMACY_LEVELS = [
@@ -102,9 +103,9 @@ const App: React.FC = () => {
     useEffect(() => {
         try {
             if (currentUser && activeFlow === 'default') {
-                 const userScope = currentUser.isGuest ? '_GUEST' : `_${currentUser.email}`;
-                 const messagesToSave = messages.filter(m => m.sender !== 'notification');
-                 if (messagesToSave.length > 0) {
+                const userScope = currentUser.isGuest ? '_GUEST' : `_${currentUser.email}`;
+                const messagesToSave = messages.filter(m => m.sender !== 'notification');
+                if (messagesToSave.length > 0) {
                      localStorage.setItem(`chatHistory_YaoJin${userScope}`, JSON.stringify(messagesToSave));
                 }
                 localStorage.setItem(`intimacy_YaoJin${userScope}`, JSON.stringify(intimacyProgress));
@@ -157,7 +158,6 @@ const App: React.FC = () => {
                     const reader = new FileReader();
                     reader.onloadend = () => resolve(reader.result as string);
                     reader.onerror = reject;
-                    // FIX: Changed 'file' to 'imageFile' to correctly reference the function parameter.
                     reader.readAsDataURL(imageFile);
                 });
                 imagePreviewUrl = dataUrl;
@@ -193,36 +193,65 @@ const App: React.FC = () => {
 
         try {
             const history = messages.filter(m => m.id !== '0' && m.sender !== 'notification');
-            const stream = sendMessageStream(text, imageFile, history, currentIntimacy, userName, activeFlow);
+            
+            // Replaced the direct function call with a fetch to the backend API
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: currentUser.email,
+                    text,
+                    imageBase64: imageBase64Data,
+                    history,
+                    intimacy: currentIntimacy,
+                    userName,
+                    currentFlow: activeFlow,
+                }),
+            });
 
+            if (!response.ok || !response.body) {
+                throw new Error('后端API请求失败或无响应体');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedText = '';
             let lastBotMessage: Message | null = null;
             let rateLimitErrorOccurred = false;
-
-            for await (const partialBotMessage of stream) {
-                lastBotMessage = { ...botMessage, ...partialBotMessage, isLoading: false };
-                if (lastBotMessage.errorType === 'rate_limit') {
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = JSON.parse(decoder.decode(value, { stream: true }));
+                
+                // Update based on the new backend stream format
+                lastBotMessage = { ...botMessage, ...chunk, isLoading: false };
+                
+                if (chunk.errorType === 'rate_limit') {
                     rateLimitErrorOccurred = true;
                 }
+                
                 setMessages(prev => {
                     const newMessages = [...prev];
                     const lastMsgIndex = newMessages.findIndex(m => m.id === botMessage.id);
                     if (lastMsgIndex !== -1) {
-                        newMessages[lastMsgIndex] = lastBotMessage;
+                        newMessages[lastMsgIndex] = lastBotMessage as Message;
                     }
                     return newMessages;
                 });
             }
 
             if (lastBotMessage && !lastBotMessage.errorType) {
-                 setIntimacyProgress(prev => Math.min(prev + Math.floor(Math.random() * 3) + 1, 100));
+                setIntimacyProgress(prev => Math.min(prev + Math.floor(Math.random() * 3) + 1, 100));
             }
-
+            
             if (rateLimitErrorOccurred) {
-                // On 429 error, increase cooldown up to 10s
                 const newDuration = Math.min(cooldownDuration + 2000, 10000);
                 setCooldownDuration(newDuration);
             } else if (cooldownDuration > 2000) {
-                // On success, gradually decrease cooldown back to 2s
                 const newDuration = Math.max(cooldownDuration - 1000, 2000);
                 setCooldownDuration(newDuration);
             }
