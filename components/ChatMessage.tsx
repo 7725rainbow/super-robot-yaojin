@@ -78,7 +78,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, userAvatar, isLastMe
     }
     return <p className="text-red-400 font-medium">{errorText}</p>;
   };
- 
+
   const DeleteButton = () => (
     message.id !== '0' ? (
       <button
@@ -95,7 +95,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, userAvatar, isLastMe
   );
 
   const bubbleStyle = !isUser ? getYaojinBubbleStyle(intimacyLevel) : {};
- 
+
   const bubbleClasses = [
     'chat-bubble', // <-- [核心修改] 我在这里为您添加了这个固定的基础类名
     'px-4 py-3 rounded-xl shadow-md',
@@ -116,7 +116,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, userAvatar, isLastMe
 
       {isUser && <DeleteButton />}
 
-      <div className={`flex flex-col flex-shrink-0 overflow-hidden ${isUser ? 'items-end' : 'items-start'} max-w-2xl`}>
+      {/* [核心修改] 我从下面的 div 中移除了 max-w-xs 类 */}
+      <div className={`flex flex-col flex-shrink-0 overflow-hidden ${isUser ? 'items-end' : 'items-start'}`}>
         <div
           className={bubbleClasses}
           style={bubbleStyle}
@@ -143,10 +144,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, userAvatar, isLastMe
                     />
                 </div>
               )}
-             
+              
               {message.divinationResult && <DivinationCard result={message.divinationResult} />}
               {message.diceResult && <DiceDisplay result={message.diceResult} />}
-             
+              
               {message.text && (
                 <div className={`text-base leading-relaxed break-words whitespace-pre-wrap`}>
                     <LinkifiedText text={message.text} />
@@ -181,16 +182,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, userAvatar, isLastMe
         )}
       </div>
 
-       {!isUser && <DeleteButton />}
+      {!isUser && <DeleteButton />}
 
       {isUser && (
-         <div className="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0 border-2 border-white overflow-hidden shadow-md flex items-center justify-center">
-            {userAvatar ? (
-                <img src={userAvatar} alt="你的头像" className="w-full h-full object-cover" />
-            ) : (
-                <img src="/default-user-avatar.png" alt="你的头像" className="w-full h-full object-cover" />
-            )}
-        </div>
+       <div className="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0 border-2 border-white overflow-hidden shadow-md flex items-center justify-center">
+          {userAvatar ? (
+              <img src={userAvatar} alt="你的头像" className="w-full h-full object-cover" />
+          ) : (
+              <img src="/default-user-avatar.png" alt="你的头像" className="w-full h-full object-cover" />
+          )}
+      </div>
       )}
     </div>
   );
