@@ -32,17 +32,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // 返回成功响应
     res.status(200).json({ text });
-  } catch (error) {
+  } catch (error: any) {
     console.error('调用 Gemini API 失败:', error);
-    
-    let errorMessage = '未知错误';
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    } else {
-      errorMessage = String(error);
-    }
 
-    // 返回错误响应
-    res.status(500).json({ error: '调用 Gemini API 失败', details: errorMessage });
+    res.status(500).json({ 
+      error: '调用 Gemini API 失败', 
+      details: error.message || '未知错误' 
+    });
   }
 }
