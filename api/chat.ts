@@ -1,4 +1,3 @@
-// pages/api/chat.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 // 使用新的别名导入，@/ 代表项目根目录
@@ -59,7 +58,7 @@ async function runTriage(userInput: string, userName: string, intimacy: Intimacy
     `;
     
     const result = await triageModel.generateContent(triagePrompt);
-    const responseText = result.response.text().trim();  // ✅ 修复：加上 ()
+    const responseText = result.response.text().trim();
     
     try {
         const triageAction = JSON.parse(responseText);
@@ -79,7 +78,7 @@ async function* sendMessageStream(
     flow: Flow
 ): AsyncGenerator<Partial<Message>> {
     try {
-        let systemInstruction = getSystemInstruction(intimacy, userName, flow); 
+        let systemInstruction = getSystemInstruction(intimacy, userName, flow);
         let externalContext: string | null = null;
         let finalPrompt = text;
         
@@ -114,7 +113,7 @@ async function* sendMessageStream(
         });
         
         for await (const chunk of response.stream) {
-            const textDelta = chunk.text();  // ✅ 修复：加上 ()
+            const textDelta = chunk.text();
             if (textDelta) {
                 yield { text: textDelta, isLoading: true };
             }
@@ -199,7 +198,7 @@ const convertToApiMessages = (history: Message[], systemInstruction: string, tex
       currentUserParts.push({
         inlineData: {
           data: imageBase64,
-          mimeType: 'image/jpeg', 
+          mimeType: 'image/jpeg',
         },
       });
     }
@@ -220,8 +219,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         const {
-            userId,
-            text,
+            text, // Removed userId, as it's not used in this function
             imageBase64,
             history,
             intimacy,
@@ -244,7 +242,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         res.writeHead(200, {
-            'Content-Type': 'text/plain', 
+            'Content-Type': 'text/plain',
             'Transfer-Encoding': 'chunked',
         });
 
