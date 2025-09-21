@@ -2,9 +2,11 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import * as character from '../core/characterSheet'; // 修正路径
-import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingChunk } from '../types'; // 修正路径
-import { getDaoistDailyIntro, handleDaoistDailyChoice } from '../services/daoistDailyService'; // 修正路径
+// 修正导入路径以匹配你的项目结构
+import * as character from '../core/characterSheet'; 
+import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingChunk } from '../types'; 
+import { getDaoistDailyIntro, handleDaoistDailyChoice } from '../services/daoistDailyService'; 
+import { getWeiboNewsFromBackend, getDoubanMoviesFromBackend } from '../services/externalDataService'; // 假设你将外部API调用也移到了一个单独的服务中
 
 // 获取环境变量中的API密钥
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -14,11 +16,10 @@ if (!API_KEY) {
 }
 
 const genAI = new GoogleGenerativeAI(API_KEY);
-// 获取两个模型，因为你的代码中使用了两种不同的模型
 const triageModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 const chatModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-// 这是一个后端函数，用于处理分流逻辑
+// 后端函数：处理对话分流
 async function runTriage(userInput: string, userName: string, intimacy: IntimacyLevel): Promise<any> {
     const triagePrompt = `
       # 指令
@@ -46,7 +47,7 @@ async function runTriage(userInput: string, userName: string, intimacy: Intimacy
     }
 }
 
-// 这是一个后端函数，用于处理核心对话逻辑
+// 后端函数：处理核心对话逻辑
 async function* sendMessageStream(
     text: string,
     imageBase64: string | null,
@@ -57,15 +58,25 @@ async function* sendMessageStream(
 ): AsyncGenerator<Partial<Message>> {
     
     try {
-        let systemInstruction = getSystemInstruction(intimacy, userName, flow); // 修正：getSystemInstruction不再是async
+        let systemInstruction = getSystemInstruction(intimacy, userName, flow); 
         let externalContext: string | null = null;
         let finalPrompt = text;
         
         if (flow === 'news') {
             if (text.includes('新鲜事')) {
                 systemInstruction += `\n${character.newsTopic.subTopics['新鲜事']}`;
+                const newsData = await getWeiboNewsFromBackend(); // 在后端调用外部API
+                if (newsData && newsData.length > 0) {
+                    const formattedTrends = newsData.map((item, index) => `[${index + 1}] ${item.title}`).join('\n');
+                    externalContext = `以下是微博热搜榜的新鲜事：\n\n${formattedTrends}`;
+                }
             } else if (text.includes('上映新片')) {
                 systemInstruction += `\n${character.newsTopic.subTopics['上映新片']}`;
+                const movieData = await getDoubanMoviesFromBackend(); // 在后端调用外部API
+                if (movieData && movieData.length > 0) {
+                    const formattedMovies = movieData.map((movie, index) => `[${index + 1}] 《${movie.title}》- 评分: ${movie.score} (链接: ${movie.url})`).join('\n');
+                    externalContext = `本道仙刚瞅了一眼，最近上映的电影倒是有点意思，这几部你看过吗？\n\n${formattedMovies}`;
+                }
             } else if (text.includes('小道仙的幻想')) {
                 systemInstruction += `\n${character.newsTopic.subTopics['小道仙的幻想']}`;
             }
@@ -106,7 +117,8 @@ async function* sendMessageStream(
     }
 }
 
-const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: Flow): string => { // 修正：移除 async
+// 后端函数：获取系统指令
+const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: Flow): string => {
     let instruction = `你是${character.persona.name}，${character.persona.description}
     你的语言和行为必须严格遵守以下规则：
     - 核心人设: ${character.persona.description}
@@ -148,7 +160,7 @@ const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: F
     return instruction;
 };
 
-// 这是一个后端函数，用于转换消息格式
+// 后端函数：转换消息格式
 const convertToApiMessages = (history: Message[], systemInstruction: string, text: string, imageBase64: string | null) => {
     const apiMessages: any[] = [{ role: 'system', parts: [{ text: systemInstruction }] }];
     for (const msg of history) {
@@ -171,7 +183,7 @@ const convertToApiMessages = (history: Message[], systemInstruction: string, tex
       currentUserParts.push({
         inlineData: {
           data: imageBase64,
-          mimeType: 'image/jpeg', // 根据实际情况修改
+          mimeType: 'image/jpeg', 
         },
       });
     }
@@ -201,13 +213,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Text or image is required' });
         }
         
-        // 设置响应头，准备以流式方式返回数据
         res.writeHead(200, {
-            'Content-Type': 'text/plain', // 为了便于解析，使用纯文本流
+            'Content-Type': 'text/plain', 
             'Transfer-Encoding': 'chunked',
         });
 
-        // 调用后端核心逻辑
         for await (const chunk of sendMessageStream(
             text,
             imageBase64,
