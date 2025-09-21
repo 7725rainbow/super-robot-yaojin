@@ -1,4 +1,7 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+// api/douban-movie.ts
+
+// Removed unused import 'VercelRequest'
+import type { VercelResponse } from '@vercel/node';
 import axios from 'axios';
 import { load } from 'cheerio';
 
@@ -12,7 +15,7 @@ interface Movie {
 const DOUBAN_URL = 'https://movie.douban.com/chart';
 const DOUBAN_COOKIE = process.env.DOUBAN_COOKIE;
 
-// 移除了未使用的 'request' 参数
+// Removed the unused 'request' parameter
 export default async function handler(response: VercelResponse) {
   if (!DOUBAN_COOKIE) {
     return response.status(500).json({ error: 'DOUBAN_COOKIE environment variable is not configured.' });
@@ -29,7 +32,6 @@ export default async function handler(response: VercelResponse) {
     const $ = load(data);
     const movies: Movie[] = [];
 
-    // 用下划线 _ 标记未使用的参数 'i'，避免 TypeScript 警告
     $('div.article div.indent table').each((_, element) => {
       const title = $(element).find('div.pl2 a').text().trim().split('/')[0].trim();
       const url = $(element).find('div.pl2 a').attr('href') || '';
