@@ -37,7 +37,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     let errorMessage = '未知错误';
     if (error instanceof Error) {
-        errorMessage = error.message;
+      errorMessage = error.message;
+    } else {
+      errorMessage = String(error);
     }
 
     // 返回错误响应
