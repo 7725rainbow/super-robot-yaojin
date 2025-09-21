@@ -9,8 +9,8 @@ import NotificationMessage from './components/NotificationMessage';
 import ConfirmationModal from './components/ConfirmationModal';
 import AvatarSelectionModal from './components/AvatarSelectionModal';
 import { Message, IntimacyLevel, User, Flow } from './types';
-// Removed: The function has been moved to the backend API.
-// import { sendMessageStream } from './services/geminiService';
+// 修正：从 services/geminiService 中导入 fileToBase64 函数
+import { fileToBase64 } from './services/geminiService';
 import { getCurrentUser, logout } from './services/authService';
 
 const INTIMACY_LEVELS = [
@@ -154,12 +154,7 @@ const App: React.FC = () => {
 
         if (imageFile) {
             try {
-                const dataUrl = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(imageFile);
-                });
+                const dataUrl = await fileToBase64(imageFile); 
                 imagePreviewUrl = dataUrl;
                 const parts = dataUrl.split(',');
                 imageMimeTypeData = parts[0].match(/:(.*?);/)?.[1];
