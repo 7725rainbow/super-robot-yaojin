@@ -1,12 +1,15 @@
+// pages/api/getWeiboNews.ts
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Read the cookie securely from the environment variable
+// 从环境变量中安全地读取Cookie
 const WEIBO_COOKIE = process.env.WEIBO_COOKIE;
 
+// 使用你提供的API地址
 const WEIBO_API_URL = 'https://m.weibo.cn/api/container/getIndex?containerid=106003type%3D25%26t%3D3%26disable_hot%3D1%26filter_type%3Drealtimehot';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // If the environment variable isn't set, return an error
+  // 检查Cookie是否已配置
   if (!WEIBO_COOKIE) {
     return res.status(500).json({ error: '后端服务尚未配置微博Cookie' });
   }
@@ -14,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const response = await fetch(WEIBO_API_URL, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.3 Mobile/15E148 Safari/604.1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Version/108.0.0.0 Safari/537.36',
         'Cookie': WEIBO_COOKIE,
       }
     });
@@ -23,12 +26,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error(`请求微博官方API失败: ${response.status}`);
     }
     
+    // 返回JSON数据
     const data = await response.json();
 
+    // 解析你提供的API地址返回的复杂JSON结构
     const cardGroup = data?.data?.cards?.[0]?.card_group;
     if (!Array.isArray(cardGroup)) {
-      console.error('微博官方API返回数据结构异常或Cookie失效:', data);
-      throw new Error('微博官方API返回数据结构异常或Cookie失效');
+      console.error('微博API返回数据结构异常或Cookie失效:', data);
+      throw new Error('微博API返回数据结构异常或Cookie失效');
     }
 
     const finalTrends = cardGroup
