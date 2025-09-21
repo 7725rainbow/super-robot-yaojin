@@ -6,7 +6,7 @@ import * as character from '../core/characterSheet';
 import { Message, IntimacyLevel, Flow, DivinationResult, DiceResult, GroundingChunk } from '../types'; 
 import { getDaoistDailyIntro, handleDaoistDailyChoice } from '../services/daoistDailyService'; 
 
-// === 从前端服务文件中迁移过来的后端函数 ===
+// === 迁移自前端的后端函数 ===
 async function getWeiboNewsFromBackend(): Promise<any[] | null> {
     try {
         const response = await fetch('/api/getWeiboNews');
@@ -80,7 +80,6 @@ async function* sendMessageStream(
 ): AsyncGenerator<Partial<Message>> {
     
     try {
-        // 修正: 确保函数调用时带有 ()
         let systemInstruction = getSystemInstruction(intimacy, userName, flow); 
         let externalContext: string | null = null;
         let finalPrompt = text;
@@ -104,7 +103,6 @@ async function* sendMessageStream(
                 systemInstruction += `\n${character.newsTopic.subTopics['小道仙的幻想']}`;
             }
         } else if (flow === 'daily') {
-            // 修正: 确保函数调用时带有 ()
             finalPrompt = handleDaoistDailyChoice(text);
         }
         
@@ -112,7 +110,6 @@ async function* sendMessageStream(
             systemInstruction += `\n\n**请你基于以下外部参考资料，与用户展开对话**:\n${externalContext}`;
         }
         
-        // 修正: 确保函数调用时带有 ()
         const apiMessages = convertToApiMessages(history, systemInstruction, finalPrompt, imageBase64);
         
         const response = await chatModel.generateContentStream({
@@ -142,7 +139,7 @@ async function* sendMessageStream(
     }
 }
 
-// 修正: getSystemInstruction是一个同步函数，不需要async
+// 后端函数：获取系统指令 (同步)
 const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: Flow): string => {
     let instruction = `你是${character.persona.name}，${character.persona.description}
     你的语言和行为必须严格遵守以下规则：
@@ -185,7 +182,7 @@ const getSystemInstruction = (intimacy: IntimacyLevel, userName: string, flow: F
     return instruction;
 };
 
-// 修正: convertToApiMessages是一个同步函数，不需要async
+// 后端函数：转换消息格式 (同步)
 const convertToApiMessages = (history: Message[], systemInstruction: string, text: string, imageBase64: string | null) => {
     const apiMessages: any[] = [{ role: 'system', parts: [{ text: systemInstruction }] }];
     for (const msg of history) {
@@ -216,7 +213,7 @@ const convertToApiMessages = (history: Message[], systemInstruction: string, tex
     return apiMessages;
 };
 
-// Vercel/Next.js maps this file to the /api/chat route
+// Vercel/Next.js 会将这个文件映射到 /api/chat 路由
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
         res.setHeader('Allow', ['POST']);
