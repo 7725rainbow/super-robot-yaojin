@@ -10,7 +10,7 @@ if (!API_KEY) {
 }
 
 const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 确保只处理 POST 请求
