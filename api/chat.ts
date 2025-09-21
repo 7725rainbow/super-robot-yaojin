@@ -1,9 +1,9 @@
 // pages/api/chat.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import * as character from '../core/characterSheet'; 
-import { Message, IntimacyLevel, Flow } from '../types'; 
-import { handleDaoistDailyChoice } from '../services/daoistDailyService'; 
+import * as character from '../core/characterSheet'; 
+import { Message, IntimacyLevel, Flow } from '../types'; 
+import { handleDaoistDailyChoice } from '../services/daoistDailyService'; 
 
 // 获取环境变量中的API密钥
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -18,7 +18,6 @@ const triageModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 // 内部函数：直接调用其他 API 路由的逻辑，避免外部 fetch
 async function getWeiboNews(): Promise<any[] | null> {
     try {
-        // 在实际项目中，应将 /api/getWeiboNews 的逻辑移动到这里或封装成一个可调用的服务
         const response = await fetch('https://your-domain.com/api/getWeiboNews');
         if (!response.ok) throw new Error('Failed to fetch Weibo news from backend API');
         return await response.json();
@@ -30,7 +29,6 @@ async function getWeiboNews(): Promise<any[] | null> {
 
 async function getDoubanMovies(): Promise<any[] | null> {
     try {
-        // 在实际项目中，应将 /api/douban-movie 的逻辑移动到这里或封装成一个可调用的服务
         const response = await fetch('https://your-domain.com/api/douban-movie');
         if (!response.ok) throw new Error('Failed to fetch Douban movie info from backend API');
         return await response.json();
@@ -58,13 +56,12 @@ async function runTriage(userInput: string, userName: string, intimacy: Intimacy
     `;
     
     const result = await triageModel.generateContent(triagePrompt);
-    const responseText = result.response.text().trim();
+    const responseText = result.response.text().trim();  // ✅ 修复：加上 ()
     
     try {
         const triageAction = JSON.parse(responseText);
         return triageAction;
     } catch (e) {
-        // 如果解析失败，默认返回继续聊天的指令
         return { action: 'CONTINUE_CHAT' };
     }
 }
@@ -79,7 +76,7 @@ async function* sendMessageStream(
     flow: Flow
 ): AsyncGenerator<Partial<Message>> {
     try {
-        let systemInstruction = getSystemInstruction(intimacy, userName, flow); 
+        let systemInstruction = getSystemInstruction(intimacy, userName, flow); 
         let externalContext: string | null = null;
         let finalPrompt = text;
         
@@ -114,7 +111,7 @@ async function* sendMessageStream(
         });
         
         for await (const chunk of response.stream) {
-            const textDelta = chunk.text;
+            const textDelta = chunk.text();  // ✅ 修复：加上 ()
             if (textDelta) {
                 yield { text: textDelta, isLoading: true };
             }
@@ -199,7 +196,6 @@ const convertToApiMessages = (history: Message[], systemInstruction: string, tex
       currentUserParts.push({
         inlineData: {
           data: imageBase64,
-          // 需要从前端获取正确的MIME类型
           mimeType: 'image/jpeg', 
         },
       });
@@ -215,7 +211,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 
-    // 在请求处理时检查环境变量
     if (!API_KEY) {
         return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is not configured.' });
     }
@@ -235,7 +230,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Text or image is required' });
         }
         
-        // === 核心改动：在处理前进行意图分流 ===
         const triageResult = await runTriage(text, userName, intimacy);
         
         let finalFlow: Flow = currentFlow;
@@ -243,18 +237,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (triageResult.action !== 'CONTINUE_CHAT') {
             finalFlow = triageResult.action;
         } else if (text.toLowerCase().includes('闲聊') || text.toLowerCase().includes('随便聊聊')) {
-            // 如果分流结果是继续聊天，且用户明确说出闲聊，则将模式重置
             finalFlow = 'chat';
         }
-        // 如果分流结果是 CONTINUE_CHAT 且用户没有明确说闲聊，则保持 currentFlow，让 AI 继续在当前上下文中聊天
-        // 这允许用户在流程中说一些无关的话，而不会立即退出
 
         res.writeHead(200, {
-            'Content-Type': 'text/plain', 
+            'Content-Type': 'text/plain', 
             'Transfer-Encoding': 'chunked',
         });
 
-        // === 新增：直接处理道仙日常，避免AI调用 ===
         if (finalFlow === 'daily' && triageResult.action === 'daily') {
             const staticResponse = handleDaoistDailyChoice(text);
             res.write(JSON.stringify({ text: staticResponse, isLoading: false }) + '\n');
@@ -262,7 +252,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return;
         }
 
-        // === 调用核心 AI 逻辑 ===
         for await (const chunk of sendMessageStream(
             text,
             imageBase64,
@@ -285,3 +274,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.status(500).json({ error: '后端服务处理失败' });
     }
 }
+
